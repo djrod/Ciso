@@ -145,6 +145,7 @@
 					}}
 					on:keydown={(_) => modalConfirm(data.data.id, data.data.name, '?/accept')}
 					class="btn variant-filled-success"
+					data-testid="status-accept-button"
 				>
 					<i class="fas fa-check mr-2" /> {m.validate()}</button
 				>
@@ -154,6 +155,7 @@
 					}}
 					on:keydown={(_) => modalConfirm(data.data.id, data.data.name, '?/reject')}
 					class="btn variant-filled-error"
+					data-testid="status-reject-button"
 				>
 					<i class="fas fa-xmark mr-2" /> {m.reject()}</button
 				>
@@ -174,6 +176,7 @@
 						}}
 						on:keydown={(_) => modalConfirm(data.data.id, data.data.name, '?/revoke')}
 						class="btn variant-filled-error"
+						data-testid="status-revoke-button"
 					>
 						<i class="fas fa-xmark mr-2" /> {m.revoke()}</button
 					>
