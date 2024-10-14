@@ -229,6 +229,16 @@ export const navData = {
 					permissions: ['change_globalsettings']
 				}
 			]
+		},
+		{
+			name: 'advanced',
+			items: [
+				{
+					name: 'requirementAssessments',
+					fa_icon: 'fa-solid fa-cogs',
+					href: '/requirement-assessments'
+				}
+			]
 		}
 	]
 };
