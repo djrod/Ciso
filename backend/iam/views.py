@@ -1,4 +1,5 @@
 from base64 import urlsafe_b64decode
+from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.decorators import method_decorator
@@ -15,6 +16,8 @@ from rest_framework.status import (
 from ciso_assistant.settings import EMAIL_HOST, EMAIL_HOST_RESCUE
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
+
+from iam.utils import KnoxTokenStrategy
 
 from .serializers import (
     ChangePasswordSerializer,
@@ -81,6 +84,13 @@ class CurrentUserView(views.APIView):
             "is_admin": request.user.is_admin(),
         }
         return Response(res_data, status=HTTP_200_OK)
+
+
+class AllauthSessionTokenView(views.APIView):
+    def get(self, request):
+        strategy = KnoxTokenStrategy()
+        allauth_session_token = strategy.create_session_token(request)
+        return Response({"token": allauth_session_token})
 
 
 class PasswordResetView(views.APIView):
@@ -196,5 +206,15 @@ class SetPasswordView(views.APIView):
             user = serializer.validated_data.get("user")
             user.set_password(new_password)
             user.save()
+            try:
+                email_address = EmailAddress.objects.get(user=user, primary=True)
+                email_address.verified = True
+                email_address.save()
+            except Exception as e:
+                logger.error(
+                    "Error setting email address as verified",
+                    user=user,
+                    error=e,
+                )
             return Response(status=status.HTTP_200_OK)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
