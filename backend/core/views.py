@@ -43,7 +43,11 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN
+from rest_framework.status import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+)
 from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework.views import APIView
 
@@ -930,6 +934,47 @@ class AppliedControlViewSet(BaseModelViewSet):
         for domain in Folder.objects.all():
             colorMap[domain.name] = next(color_cycle)
         return Response({"entries": entries, "colorMap": colorMap})
+
+    @action(
+        detail=True,
+        name="Duplicate applied control",
+        methods=["post"],
+        serializer_class=AppliedControlDuplicateSerializer,
+    )
+    def duplicate(self, request, pk):
+        (object_ids_view, _, _) = RoleAssignment.get_accessible_object_ids(
+            Folder.get_root_folder(), request.user, AppliedControl
+        )
+        if UUID(pk) not in object_ids_view:
+            return Response(
+                {"results": "applied control duplicated"}, status=HTTP_404_NOT_FOUND
+            )
+
+        applied_control = self.get_object()
+        data = request.data
+        new_folder = Folder.objects.get(id=data["folder"])
+        duplicate_applied_control = AppliedControl.objects.create(
+            reference_control=applied_control.reference_control,
+            name=data["name"],
+            description=data["description"],
+            folder=new_folder,
+            category=applied_control.category,
+            csf_function=applied_control.csf_function,
+            status=applied_control.status,
+            start_date=applied_control.start_date,
+            eta=applied_control.eta,
+            expiry_date=applied_control.expiry_date,
+            link=applied_control.link,
+            effort=applied_control.effort,
+            cost=applied_control.cost,
+        )
+        if data["duplicate_evidences"]:
+            duplicate_related_objects(
+                applied_control, duplicate_applied_control, new_folder, "evidences"
+            )
+            duplicate_applied_control.save()
+
+        return Response({"results": "applied control duplicated"})
 
 
 class PolicyViewSet(AppliedControlViewSet):
